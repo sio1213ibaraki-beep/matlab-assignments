@@ -16,10 +16,14 @@ model_name = 'logistic_model';
 T_end      = 27;    % simulation end time [day]
 dt         = 0.1;   % time step [day]
 
-%% Create Simulink model programmatically if it does not exist
-if ~exist([model_name, '.slx'], 'file')
-    create_logistic_simulink_model(model_name);
+%% Create Simulink model (always regenerate to apply latest settings)
+if bdIsLoaded(model_name)
+    close_system(model_name, 0);
 end
+if exist([model_name, '.slx'], 'file')
+    delete([model_name, '.slx']);
+end
+create_logistic_simulink_model(model_name);
 
 %% Load model and configure
 load_system(model_name);
@@ -44,7 +48,28 @@ end
 
 %% Extract results
 t = sim_out.tout;
-N = sim_out.yout{1}.Values.Data;
+% Try multiple output formats depending on MATLAB/Simulink version
+if isfield(sim_out, 'simout')
+    raw = sim_out.simout;
+    if isstruct(raw) && isfield(raw, 'signals')
+        N = raw.signals.values;
+    else
+        N = raw;
+    end
+elseif isfield(sim_out, 'yout')
+    try
+        N = sim_out.yout{1}.Values.Data;
+    catch
+        N = sim_out.yout;
+    end
+else
+    % Fall back to base workspace variable set by To Workspace block
+    N = evalin('base', 'simout');
+    if isstruct(N) && isfield(N, 'signals')
+        N = N.signals.values;
+    end
+end
+N = N(:);
 
 close_system(model_name, 0);
 
@@ -101,7 +126,7 @@ function create_logistic_simulink_model(mdl)
     add_block('simulink/Sinks/To Workspace', [mdl, '/ToWS'], ...
         'Position', [600, 165, 660, 205], ...
         'VariableName', 'simout', ...
-        'SaveFormat', 'Structure With Time');
+        'SaveFormat', 'Array');
 
     % ----- Connections -----
     % Integrator output -> Product input 1
