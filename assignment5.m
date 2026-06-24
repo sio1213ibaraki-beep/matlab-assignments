@@ -1,30 +1,29 @@
 close all; clear; clc;
 
-% Parameters (must be in workspace before Simulink runs)
-r  = 0.5;   % intrinsic growth rate [1/day]
+% Parameters (set in m-file as required)
+r  = 0.5;   % growth rate [1/day]
 K  = 290;   % carrying capacity [cells/0.5 mL]
-N0 = 1.2;   % initial population [cells/0.5 mL]
-
-% Open Simulink model for editing
-% (K, r, N0 are now in workspace so Gain blocks will not show errors)
-model_name = 'logistic_growth_model';
-open_system(model_name);
-
-% ---- After building and saving the model, run the section below ----
-% (Run this file a second time once the slx model is complete)
+N0 = 1.2;   % initial population
 
 % Simulation settings
-step_size = 0.1;  % [day]
-sim_time  = 27;   % [day]
+model_name = 'logistic_growth_model';
+step_size  = 0.1;   % [day]
+sim_time   = 27;    % [day]
 
+% Load Simulink model (must be saved as logistic_growth_model.slx)
+load_system(model_name);
+
+% Apply solver settings
 set_param(model_name, ...
-    'StopTime',  num2str(sim_time), ...
-    'FixedStep', num2str(step_size));
+    'SolverType', 'Fixed-step', ...
+    'Solver',     'ode4',       ...
+    'FixedStep',  num2str(step_size), ...
+    'StopTime',   num2str(sim_time));
 
 % Run simulation
 simOut = sim(model_name);
 
-% Get results
+% Get results from To Workspace block (variable name: N_out, format: Timeseries)
 t = simOut.get('N_out').Time;
 N = simOut.get('N_out').Data;
 
