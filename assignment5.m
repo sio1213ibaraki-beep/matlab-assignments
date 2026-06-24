@@ -1,25 +1,30 @@
 close all; clear; clc;
 
-% Parameters
+% Parameters (must be in workspace before Simulink runs)
 r  = 0.5;   % intrinsic growth rate [1/day]
 K  = 290;   % carrying capacity [cells/0.5 mL]
 N0 = 1.2;   % initial population [cells/0.5 mL]
 
-% Simulation settings
+% Open Simulink model for editing
+% (K, r, N0 are now in workspace so Gain blocks will not show errors)
 model_name = 'logistic_growth_model';
-step_size  = 0.1;   % [day]
-sim_time   = 27;    % [day]
+open_system(model_name);
 
-% Run Simulink model
-% (Set StopTime and FixedStep via set_param so slx file does not need editing)
-load_system(model_name);
+% ---- After building and saving the model, run the section below ----
+% (Run this file a second time once the slx model is complete)
+
+% Simulation settings
+step_size = 0.1;  % [day]
+sim_time  = 27;   % [day]
+
 set_param(model_name, ...
     'StopTime',  num2str(sim_time), ...
     'FixedStep', num2str(step_size));
+
+% Run simulation
 simOut = sim(model_name);
 
 % Get results
-% Requires a "To Workspace" block in the model named "N_out" (timeseries)
 t = simOut.get('N_out').Time;
 N = simOut.get('N_out').Data;
 
