@@ -71,7 +71,7 @@ add_block('simulink/Sinks/Scope', [model_name '/Scope'], ...
 % To Workspace (to retrieve data in m-file)
 add_block('simulink/Sinks/To Workspace', [model_name '/ToWS'], ...
     'VariableName', 'N_out', ...
-    'SaveFormat',   'Array', ...
+    'SaveFormat',   'timeseries', ...
     'Position', pos_to_ws);
 
 % ---- Connect blocks ----
@@ -100,14 +100,11 @@ add_line(model_name, 'Integrator/1', 'Product1/2');
 save_system(model_name, 'logistic_growth_model.slx');
 
 % ---- Run simulation ----
-sim(model_name);
+simOut = sim(model_name);
 
-% Retrieve time vector from simulation
-t = (0 : step_size : sim_time)';
-N = N_out;
-if length(N) > length(t)
-    N = N(1:length(t));
-end
+% Retrieve results from simulation output
+t = simOut.tout;
+N = simOut.get('N_out').Data;
 
 % ---- Plot ----
 figure;
